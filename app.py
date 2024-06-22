@@ -5,8 +5,9 @@ import pandas as pd
 from PIL import Image
 import torch
 from transformers import BlipProcessor, BlipForQuestionAnswering
-import streamlit as st
+import streamlit as st # newer version of streamlit than 1.35.0 seem to cause package conflicts with torch and transformers
 
+# The underscore (_) is used to skip hashing as the model and processor are not hashable
 @st.cache_data
 def inference(_model, _processor, image=None, image_path=None, question_text=None):
     if image is None and image_path is not None:
@@ -33,6 +34,7 @@ def inferenceOnUploadedImage(model, processor):
     
     question_text = st.text_input('Ask a question about the radiology image!')
     if st.button('Ask'):
+        st.info(f'Question: {question_text}')
         with st.spinner('Inference is running...'):
             answer = inference(model, processor, image_path=uploaded_file_path, question_text=question_text)
         st.success(f'Answer: {answer}')
@@ -55,7 +57,7 @@ def inferenceOnSampleImage(model, processor):
             answer = inference(model, processor, image=image, question_text=question_text)
         st.success(f'Predicted Answer: {answer}')
     
-    random_sample_button = st.button('Random a Sample') # Unused but necessary to trigger the event
+    random_sample_button = st.button('Random a sample') # Unused but necessary to trigger the event
     
 def runTask(choice, model, processor):
     if choice == 'Upload an image':
