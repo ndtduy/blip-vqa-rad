@@ -7,12 +7,13 @@ import torch
 from transformers import BlipProcessor, BlipForQuestionAnswering
 import streamlit as st
 
-def inference(model, processor, image=None, image_path=None, question_text=None):
+@st.cache_data
+def inference(_model, _processor, image=None, image_path=None, question_text=None):
     if image is None and image_path is not None:
         image = Image.open(image_path).convert('RGB')
-    inputs = processor(image, question_text, padding=True, return_tensors='pt')
-    outputs = model.generate(**inputs, max_new_tokens=512)
-    answer = processor.decode(outputs[0], skip_special_tokens=True)
+    inputs = _processor(image, question_text, padding=True, return_tensors='pt')
+    outputs = _model.generate(**inputs, max_new_tokens=512)
+    answer = _processor.decode(outputs[0], skip_special_tokens=True)
     return answer
 
 def inferenceOnUploadedImage(model, processor):
@@ -62,6 +63,13 @@ def runTask(choice, model, processor):
     elif choice == 'Use a sample image':
         inferenceOnSampleImage(model, processor)
 
+@st.cache_resource
+def initModel():
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    processor = BlipProcessor.from_pretrained('Salesforce/blip-vqa-base')
+    model = BlipForQuestionAnswering.from_pretrained('hop1um/blip-vqa-rad').to(device)
+    return model, processor
+
 def main():
     st.set_page_config(page_title='Visual Question Answering on Radiology Image', page_icon=':hugging_face:')
     st.title('Visual QA tailored on Radiology Image')
@@ -77,9 +85,10 @@ def main():
         )
         '[![](https://img.shields.io/badge/GitHub%20Repo-F9AB00?style=for-the-badge&logo=github&labelColor=grey&color=black)](https://github.com/ndtduy/blip-vqa-rad)'
     
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    processor = BlipProcessor.from_pretrained('Salesforce/blip-vqa-base')
-    model = BlipForQuestionAnswering.from_pretrained('hop1um/blip-vqa-rad').to(device)
+    # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # processor = BlipProcessor.from_pretrained('Salesforce/blip-vqa-base')
+    # model = BlipForQuestionAnswering.from_pretrained('hop1um/blip-vqa-rad').to(device)
+    model, processor = initModel()
     runTask(choices, model, processor)
 if __name__ == '__main__':
     main()
